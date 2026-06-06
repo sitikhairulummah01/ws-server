@@ -2,7 +2,9 @@ const WebSocket = require('ws');
 const admin = require('firebase-admin');
 
 // ================= FIREBASE =================
-const serviceAccount = require('./serviceAccountKey.json');
+const serviceAccount = JSON.parse(
+  process.env.FIREBASE_SERVICE_ACCOUNT
+);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
