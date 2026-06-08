@@ -15,6 +15,7 @@ const db = admin.database();
 
 // ================= DATA TERBARU =================
 let latestData = null;
+let lastReceiveTime = 0;
 
 // ================= WEBSOCKET =================
 const PORT = process.env.PORT || 81;
@@ -39,8 +40,11 @@ wss.on('connection', function connection(ws) {
 
       const data = JSON.parse(message);
 
-      // simpan data terbaru
+      // Simpan data terbaru
       latestData = data;
+
+      // Catat waktu data terakhir diterima
+      lastReceiveTime = Date.now();
 
       // ================= KIRIM KE DASHBOARD =================
       wss.clients.forEach(function each(client) {
@@ -66,20 +70,31 @@ wss.on('connection', function connection(ws) {
 
     console.log("Client terputus");
 
+    // Hentikan histori jika koneksi terputus
+    latestData = null;
+    lastReceiveTime = 0;
+
   });
 
 });
 
-// ================= SIMPAN HISTORI SETIAP 10 DETIK =================
+// ================= SIMPAN HISTORI SETIAP 7 DETIK =================
 setInterval(() => {
 
-  if (latestData) {
+  const now = Date.now();
+
+  // Hanya simpan jika masih menerima data dalam 10 detik terakhir
+  if (
+    latestData &&
+    (now - lastReceiveTime) < 10000
+  ) {
 
     db.ref("histori").push({
 
       suhu: latestData.suhu,
       hum: latestData.hum,
       co: latestData.co,
+      status: latestData.status,
       ts: Date.now()
 
     });
@@ -89,3 +104,5 @@ setInterval(() => {
   }
 
 }, 7000);
+
+console.log("Server siap menerima koneksi WebSocket");
