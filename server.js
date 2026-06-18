@@ -103,6 +103,6 @@ setInterval(() => {
 
   }
 
-}, 7000);
+}, 10000);
 
 console.log("Server siap menerima koneksi WebSocket");
