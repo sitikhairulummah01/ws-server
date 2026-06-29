@@ -32,38 +32,47 @@ wss.on('connection', function connection(ws) {
   console.log("Client terhubung");
 
   // ================= TERIMA DATA =================
-  ws.on('message', function incoming(message) {
+ws.on('message', function incoming(message) {
 
-    try {
+  try {
 
-      console.log("Data:", message.toString());
+    const serverReceive = Date.now();
 
-      const data = JSON.parse(message);
+    console.log("Data:", message.toString());
 
-      // Simpan data terbaru
-      latestData = data;
+    const data = JSON.parse(message);
 
-      // Catat waktu data terakhir diterima
-      lastReceiveTime = Date.now();
+    // ===== TAMBAHAN UNTUK MENGUKUR DELAY =====
+    console.log("ESP32 Timestamp :", data.ts);
+    console.log("Server Receive  :", serverReceive);
+    console.log("ESP32 -> Server :", serverReceive - data.ts, "ms");
 
-      // ================= KIRIM KE DASHBOARD =================
-      wss.clients.forEach(function each(client) {
+    // Simpan data terbaru
+    latestData = data;
 
-        if (client.readyState === WebSocket.OPEN) {
+    // Catat waktu data terakhir diterima
+    lastReceiveTime = serverReceive;
 
-          client.send(message.toString());
+    // ================= KIRIM KE DASHBOARD =================
+    wss.clients.forEach(function each(client) {
 
-        }
+      if (client.readyState === WebSocket.OPEN) {
 
-      });
+        client.send(message.toString());
 
-    } catch (error) {
+      }
 
-      console.log("Error:", error.message);
+    });
 
-    }
+    console.log("Server Broadcast :", Date.now());
 
-  });
+  } catch (error) {
+
+    console.log("Error:", error.message);
+
+  }
+
+});
 
   // ================= CLIENT DISCONNECT =================
   ws.on('close', function () {
