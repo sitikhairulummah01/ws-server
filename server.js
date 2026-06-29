@@ -13,9 +13,6 @@ admin.initializeApp({
 
 const db = admin.database();
 
-// ================= DATA TERBARU =================
-let latestData = null;
-let lastReceiveTime = 0;
 
 // ================= WEBSOCKET =================
 const PORT = process.env.PORT || 81;
@@ -47,11 +44,6 @@ ws.on('message', function incoming(message) {
     console.log("Server Receive  :", serverReceive);
     console.log("ESP32 -> Server :", serverReceive - data.ts, "ms");
 
-    // Simpan data terbaru
-    latestData = data;
-
-    // Catat waktu data terakhir diterima
-    lastReceiveTime = serverReceive;
 
     // ================= KIRIM KE DASHBOARD =================
     wss.clients.forEach(function each(client) {
@@ -65,6 +57,19 @@ ws.on('message', function incoming(message) {
     });
 
     console.log("Server Broadcast :", Date.now());
+// ================= SIMPAN FIREBASE =================
+    db.ref("histori").push({
+
+    id: data.id,
+    suhu: data.suhu,
+    hum: data.hum,
+    co: data.co,
+    status: data.status,
+    ts: data.ts
+
+});
+
+console.log("Data histori tersimpan");
 
   } catch (error) {
 
@@ -79,39 +84,7 @@ ws.on('message', function incoming(message) {
 
     console.log("Client terputus");
 
-    // Hentikan histori jika koneksi terputus
-    latestData = null;
-    lastReceiveTime = 0;
-
   });
 
 });
-
-// ================= SIMPAN HISTORI SETIAP 7 DETIK =================
-setInterval(() => {
-
-  const now = Date.now();
-
-  // Hanya simpan jika masih menerima data dalam 10 detik terakhir
-  if (
-    latestData &&
-    (now - lastReceiveTime) < 10000
-  ) {
-
-    db.ref("histori").push({
-
-      suhu: latestData.suhu,
-      hum: latestData.hum,
-      co: latestData.co,
-      status: latestData.status,
-      ts: Date.now()
-
-    });
-
-    console.log("Data histori tersimpan");
-
-  }
-
-}, 10000);
-
 console.log("Server siap menerima koneksi WebSocket");
