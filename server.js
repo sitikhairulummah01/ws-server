@@ -37,6 +37,19 @@ ws.on('message', function incoming(message) {
 
     const data = JSON.parse(message);
 
+    // ===== KALIBRASI CLOCK BROWSER (ping-pong) =====
+    // Dipakai browser untuk estimasi selisih jam (clock offset) terhadap
+    // server, supaya delay Server->Browser tidak terganggu jam laptop
+    // yang kurang presisi. Balas langsung, jangan diproses sebagai data sensor.
+    if (data.type === 'ping') {
+      ws.send(JSON.stringify({
+        type: 'pong',
+        clientTime: data.clientTime,
+        serverTime: Date.now()
+      }));
+      return;
+    }
+
     const delayEspToServer = serverReceive - data.ts;
 
     console.log("ESP32 Timestamp :", data.ts);
